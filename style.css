@@ -1,0 +1,342 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f4f1eb;
+  --card: #ffffff;
+  --card-soft: #fbf8f1;
+  --text: #171717;
+  --muted: #5f5f5f;
+  --border: #e8dfd0;
+  --accent: #8b4513;
+  --accent-soft: #fff4e3;
+  --shadow: 0 10px 28px rgba(65, 43, 22, 0.08);
+  --shadow-soft: 0 4px 14px rgba(65, 43, 22, 0.06);
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(139, 69, 19, 0.08), transparent 32%),
+    linear-gradient(180deg, #fbfaf7 0%, var(--bg) 100%);
+  color: var(--text);
+}
+
+main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 42px 28px 64px;
+}
+
+/* ---------- Header ---------- */
+
+.intro {
+  margin-bottom: 24px;
+  padding: 30px 34px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(232, 223, 208, 0.85);
+  border-radius: 22px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(8px);
+}
+
+h1 {
+  margin: 0 0 16px;
+  max-width: 1000px;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -1.8px;
+}
+
+.subtitle,
+.intro > p {
+  max-width: 1040px;
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+/* ---------- Team Card ---------- */
+
+.team-info {
+  margin-top: 22px;
+  padding: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbf8f2 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.team-info p {
+  margin: 0 0 14px;
+}
+
+.team-info p strong,
+.team-label {
+  display: inline-block;
+  padding: 7px 13px;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  font-size: 13px;
+  letter-spacing: 0.35px;
+  font-weight: 800;
+}
+
+.team-info ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-info li {
+  padding: 13px 15px;
+  background: #f8f4eb;
+  border: 1px solid #eee4d4;
+  border-radius: 14px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* ---------- Main Finding ---------- */
+
+.finding-card {
+  margin: 24px 0;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, #fff7e8 0%, #ffffff 100%);
+  border: 1px solid #efdcc1;
+  border-left: 7px solid var(--accent);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.finding-card h2 {
+  margin: 0 0 8px;
+  font-size: 25px;
+}
+
+.finding-card p {
+  margin: 0;
+  color: #333;
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 26px 0;
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.control-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+label {
+  font-weight: 800;
+  color: #222;
+}
+
+select {
+  min-width: 190px;
+  padding: 10px 38px 10px 12px;
+  border: 1px solid #cfc4b3;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  color: #222;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+select:hover,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.12);
+}
+
+/* ---------- Charts ---------- */
+
+.charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.chart-card,
+.writeup {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.chart-card h2,
+.writeup h2 {
+  margin: 0 0 10px;
+  font-size: 26px;
+  letter-spacing: -0.4px;
+}
+
+.chart-note {
+  margin: 0 0 18px;
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.y-axis-title {
+  font-size: 13px;
+  fill: #222;
+  font-weight: 800;
+}
+
+.axis-label {
+  font-size: 13px;
+  fill: #222;
+  font-weight: 800;
+}
+
+.legend text {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #333;
+}
+
+.bar-label {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #111;
+}
+
+.violin {
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.violin:hover {
+    filter: brightness(1.08);
+}
+
+/* ---------- Tooltip ---------- */
+
+#tooltip {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #d8cabb;
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(6px);
+}
+
+/* ---------- Write-up ---------- */
+
+.writeup {
+  margin-top: 28px;
+}
+
+.writeup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px 34px;
+}
+
+.writeup h3 {
+  margin: 14px 0 8px;
+  font-size: 18px;
+  color: #1f1f1f;
+}
+
+.writeup h3::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 2px;
+}
+
+.writeup p {
+  margin: 0;
+  color: #444;
+  line-height: 1.72;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 980px) {
+  main {
+    padding: 28px 18px 48px;
+  }
+
+  .charts {
+    grid-template-columns: 1fr;
+  }
+
+  .writeup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-info ul {
+    grid-template-columns: 1fr;
+  }
+
+  .intro {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 620px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .control-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  select {
+    width: 100%;
+  }
+
+  .chart-card,
+  .writeup,
+  .intro {
+    border-radius: 18px;
+  }
+}
