@@ -136,7 +136,7 @@
             Sparse Crops and Intense Cropland. Color represents the crop-zone
             category: non-agricultural, sparse crops, or intense cropland. The bar chart
             summarizes the average selected precipitation proxy for each crop-zone group,
-            making the group-level pattern easier to compare.
+            making the group-level pattern easier to compare. An interactive US map visualization displays the geographic distribution of sampled data points, with a yellow-to-red color scale encoding precipitation intensity values. This spatial view complements the statistical summaries and provides geographic context for the precipitation and cropland patterns.
           </p>
         </div>
 
@@ -146,7 +146,7 @@
             The precipitation dropdown lets users switch between overall precipitation,
             rain proxy, and snow proxy. The crop-zone dropdown lets users filter the view
             to focus on one land-use category at a time. Hover tooltips reveal the exact
-            proxy values and approximate geographic location for each sampled point.
+            proxy values and approximate geographic location for each sampled point. All three visualizations—the violin plot, bar chart, and interactive map—update dynamically and synchronously when dropdown selections change, providing coordinated views of the same underlying data from different analytical perspectives.
           </p>
         </div>
 
@@ -158,7 +158,7 @@
             the final research question, we exported cleaned and sampled data into CSV
             files and rebuilt the visualization in D3. The most time-consuming part was
             transforming image-based map layers into a format that could be used for an
-            interactive browser visualization.
+            interactive browser visualization. Based on feedback, we added an interactive US map with D3 to better show the spatial relationships between precipitation and cropland patterns across geographic regions.
           </p>
 
           <p>
