@@ -550,26 +550,40 @@ function drawMap() {
   const mapWidth = 900;
   const mapHeight = 550;
 
-  const svg = d3.select("#map")
-    .append("svg")
-    .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
-    .attr("class", "map-svg");
-
-  const projection = d3.geoAlbersUsa()
-    .fitSize([mapWidth, mapHeight], { type: "FeatureCollection", features: [] });
-
-  const path = d3.geoPath().projection(projection);
+  console.log("drawMap() called with metric:", measure);
 
   // Load US states TopoJSON
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+    console.log("TopoJSON loaded:", us);
+
+    // Create SVG with proper dimensions
+    const svg = d3.select("#map")
+      .append("svg")
+      .attr("width", mapWidth)
+      .attr("height", mapHeight)
+      .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
+      .attr("class", "map-svg");
+
+    // Get US states feature and fit projection
+    const usStates = topojson.feature(us, us.objects.states);
+    console.log("US States feature:", usStates);
+
+    // Create projection fitted to US states
+    const projection = d3.geoAlbersUsa()
+      .fitSize([mapWidth, mapHeight], usStates);
+
+    const path = d3.geoPath().projection(projection);
+
     // Draw state boundaries
     svg.append("g")
       .attr("class", "states")
       .selectAll("path")
-      .data(topojson.feature(us, us.objects.states).features)
+      .data(usStates.features)
       .join("path")
       .attr("d", path)
       .attr("class", "state");
+
+    console.log("States drawn. Total states:", usStates.features.length);
 
     // Get value range for color scale
     const values = data
@@ -579,19 +593,28 @@ function drawMap() {
     const minVal = d3.min(values);
     const maxVal = d3.max(values);
 
+    console.log("Color scale domain:", minVal, "to", maxVal);
+
     // Color scale for precipitation metrics
     const colorScale = d3.scaleSequential()
       .domain([minVal, maxVal])
       .interpolator(d3.interpolateYlOrRd);
 
     // Draw data points
-    svg.append("g")
-      .attr("class", "data-points")
-      .selectAll("circle")
+    const pointsGroup = svg.append("g")
+      .attr("class", "data-points");
+
+    pointsGroup.selectAll("circle")
       .data(data)
       .join("circle")
-      .attr("cx", d => projection([d.lon, d.lat])[0])
-      .attr("cy", d => projection([d.lon, d.lat])[1])
+      .attr("cx", d => {
+        const coords = projection([d.lon, d.lat]);
+        return coords ? coords[0] : 0;
+      })
+      .attr("cy", d => {
+        const coords = projection([d.lon, d.lat]);
+        return coords ? coords[1] : 0;
+      })
       .attr("r", 2)
       .attr("fill", d => colorScale(d[measure]))
       .attr("opacity", 0.65)
@@ -622,5 +645,9 @@ function drawMap() {
         tooltip.style("opacity", 0);
       });
 
-  }).catch(error => console.error("Error loading TopoJSON:", error));
+    console.log("Map rendered successfully with", data.length, "data points");
+
+  }).catch(error => {
+    console.error("Error loading TopoJSON:", error);
+  });
 }

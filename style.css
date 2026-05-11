@@ -305,6 +305,9 @@ svg {
   background: #f0f5fa;
   border-radius: 12px;
   overflow: visible;
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .state {
