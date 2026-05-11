@@ -540,7 +540,7 @@ function drawBarChart() {
 }
 
 function drawMap() {
-  const measure = getCurrentMetric();
+  const measure = getCurrentMeasure();
   const data = pointsData;
 
   if (!data.length) return;
