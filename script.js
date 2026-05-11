@@ -669,8 +669,8 @@ function drawMap() {
     // Add gradient legend
     const legendWidth = 280;
     const legendHeight = 20;
-    const legendX = mapWidth / 2 - legendWidth / 2;
-    const legendY = mapHeight - 70;
+    const legendX = mapWidth - legendWidth - 30;
+    const legendY = 60;
 
     // Create defs for gradient
     const defs = svg.append("defs");
@@ -691,8 +691,8 @@ function drawMap() {
     // Legend title
     svg.append("text")
       .attr("class", "legend-title")
-      .attr("x", legendX)
-      .attr("y", legendY - 15)
+      .attr("x", legendX + legendWidth / 2)
+      .attr("y", legendY - 12)
       .text("Precipitation Intensity Scale");
 
     // Legend background rect
@@ -715,7 +715,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-label")
       .attr("x", legendX)
-      .attr("y", legendY + legendHeight + 14)
+      .attr("y", legendY + legendHeight + 18)
       .attr("text-anchor", "start")
       .text(minVal.toFixed(1));
 
@@ -723,7 +723,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-label")
       .attr("x", legendX + legendWidth)
-      .attr("y", legendY + legendHeight + 14)
+      .attr("y", legendY + legendHeight + 18)
       .attr("text-anchor", "end")
       .text(maxVal.toFixed(1));
 
