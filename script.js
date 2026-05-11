@@ -51,6 +51,7 @@ Promise.all([
   pointsData = points;
   summaryData = summary;
 
+  updateMapTitle();
   drawViolinPlot();
   drawBarChart();
   drawMap();
@@ -68,6 +69,7 @@ Promise.all([
 });
 
 function updateCharts() {
+  updateMapTitle();
   drawViolinPlot();
   drawBarChart();
   drawMap();
@@ -89,6 +91,25 @@ function getFilteredPoints() {
   }
 
   return pointsData.filter(d => d.crop_zone === selectedZone);
+}
+
+function updateMapTitle() {
+  const measure = getCurrentMeasure();
+
+  const titleMap = {
+    precip_intensity: "Overall Precipitation Across the United States",
+    rain_proxy: "Rain Intensity Across the United States",
+    snow_proxy: "Snow Intensity Across the United States"
+  };
+
+  const descriptionMap = {
+    precip_intensity: "This map shows the spatial distribution of data points colored by overall precipitation intensity. Darker shades indicate higher intensity values. Use the precipitation measure dropdown above to change the visualization.",
+    rain_proxy: "This map shows the spatial distribution of data points colored by rain intensity. Darker shades indicate higher rain intensity values. Use the precipitation measure dropdown above to change the visualization.",
+    snow_proxy: "This map shows the spatial distribution of data points colored by snow intensity. Darker shades indicate higher snow intensity values. Use the precipitation measure dropdown above to change the visualization."
+  };
+
+  d3.select("#map-title").text(titleMap[measure]);
+  d3.select("#map-description").text(descriptionMap[measure]);
 }
 
 // function drawScatterplot() {
