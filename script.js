@@ -645,6 +645,67 @@ function drawMap() {
         tooltip.style("opacity", 0);
       });
 
+    // Add gradient legend
+    const legendWidth = 280;
+    const legendHeight = 20;
+    const legendX = mapWidth / 2 - legendWidth / 2;
+    const legendY = mapHeight - 70;
+
+    // Create defs for gradient
+    const defs = svg.append("defs");
+    const gradient = defs.append("linearGradient")
+      .attr("id", "legend-gradient")
+      .attr("x1", "0%")
+      .attr("x2", "100%");
+
+    // Add color stops from YlOrRd
+    const numStops = 10;
+    for (let i = 0; i <= numStops; i++) {
+      const t = i / numStops;
+      gradient.append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", d3.interpolateYlOrRd(t));
+    }
+
+    // Legend title
+    svg.append("text")
+      .attr("class", "legend-title")
+      .attr("x", legendX)
+      .attr("y", legendY - 15)
+      .text("Precipitation Intensity Scale");
+
+    // Legend background rect
+    svg.append("rect")
+      .attr("class", "legend-bar")
+      .attr("x", legendX)
+      .attr("y", legendY)
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .attr("fill", "url(#legend-gradient)")
+      .attr("stroke", "#999")
+      .attr("stroke-width", 1);
+
+    // Legend scale
+    const legendScale = d3.scaleLinear()
+      .domain([minVal, maxVal])
+      .range([legendX, legendX + legendWidth]);
+
+    // Min value text
+    svg.append("text")
+      .attr("class", "legend-label")
+      .attr("x", legendX)
+      .attr("y", legendY + legendHeight + 14)
+      .attr("text-anchor", "start")
+      .text(minVal.toFixed(1));
+
+    // Max value text
+    svg.append("text")
+      .attr("class", "legend-label")
+      .attr("x", legendX + legendWidth)
+      .attr("y", legendY + legendHeight + 14)
+      .attr("text-anchor", "end")
+      .text(maxVal.toFixed(1));
+
     console.log("Map rendered successfully with", data.length, "data points");
 
   }).catch(error => {

@@ -325,6 +325,28 @@ svg {
   cursor: pointer;
 }
 
+.legend-title {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #333;
+  text-anchor: middle;
+}
+
+.legend-bar {
+  cursor: pointer;
+}
+
+.legend-bar:hover {
+  opacity: 0.85;
+}
+
+.legend-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #555;
+  dominant-baseline: hanging;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 980px) {
