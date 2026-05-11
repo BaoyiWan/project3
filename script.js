@@ -53,6 +53,7 @@ Promise.all([
 
   drawViolinPlot();
   drawBarChart();
+  drawMap();
 
   d3.select("#measure-select")
     .on("change", function() {
@@ -69,6 +70,7 @@ Promise.all([
 function updateCharts() {
   drawViolinPlot();
   drawBarChart();
+  drawMap();
 }
 
 function getCurrentMeasure() {
@@ -535,4 +537,90 @@ function drawBarChart() {
     .attr("y", d => y(d[summaryCol]) - 8)
     .attr("text-anchor", "middle")
     .text(d => d[summaryCol].toFixed(1));
+}
+
+function drawMap() {
+  const measure = getCurrentMetric();
+  const data = pointsData;
+
+  if (!data.length) return;
+
+  d3.select("#map").selectAll("*").remove();
+
+  const mapWidth = 900;
+  const mapHeight = 550;
+
+  const svg = d3.select("#map")
+    .append("svg")
+    .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
+    .attr("class", "map-svg");
+
+  const projection = d3.geoAlbersUsa()
+    .fitSize([mapWidth, mapHeight], { type: "FeatureCollection", features: [] });
+
+  const path = d3.geoPath().projection(projection);
+
+  // Load US states TopoJSON
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+    // Draw state boundaries
+    svg.append("g")
+      .attr("class", "states")
+      .selectAll("path")
+      .data(topojson.feature(us, us.objects.states).features)
+      .join("path")
+      .attr("d", path)
+      .attr("class", "state");
+
+    // Get value range for color scale
+    const values = data
+      .map(d => +d[measure])
+      .filter(v => !isNaN(v));
+
+    const minVal = d3.min(values);
+    const maxVal = d3.max(values);
+
+    // Color scale for precipitation metrics
+    const colorScale = d3.scaleSequential()
+      .domain([minVal, maxVal])
+      .interpolator(d3.interpolateYlOrRd);
+
+    // Draw data points
+    svg.append("g")
+      .attr("class", "data-points")
+      .selectAll("circle")
+      .data(data)
+      .join("circle")
+      .attr("cx", d => projection([d.lon, d.lat])[0])
+      .attr("cy", d => projection([d.lon, d.lat])[1])
+      .attr("r", 2)
+      .attr("fill", d => colorScale(d[measure]))
+      .attr("opacity", 0.65)
+      .on("mouseover", function(event, d) {
+        d3.select(this)
+          .attr("r", 5)
+          .attr("opacity", 1);
+
+        tooltip
+          .style("opacity", 1)
+          .html(`
+            <strong>${measureLabels[measure]}: ${d[measure].toFixed(2)}</strong><br>
+            Crop Zone: ${d.crop_zone}<br>
+            Lon: ${d.lon.toFixed(2)}, Lat: ${d.lat.toFixed(2)}<br>
+            Crop Density: ${d.crop_density.toFixed(0)}
+          `);
+      })
+      .on("mousemove", function(event) {
+        tooltip
+          .style("left", `${event.pageX + 14}px`)
+          .style("top", `${event.pageY - 28}px`);
+      })
+      .on("mouseout", function() {
+        d3.select(this)
+          .attr("r", 2)
+          .attr("opacity", 0.65);
+
+        tooltip.style("opacity", 0);
+      });
+
+  }).catch(error => console.error("Error loading TopoJSON:", error));
 }

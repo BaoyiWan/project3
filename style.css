@@ -295,6 +295,33 @@ svg {
   line-height: 1.72;
 }
 
+/* ---------- Map Section ---------- */
+
+.map-section {
+  margin: 24px 0;
+}
+
+.map-svg {
+  background: #f0f5fa;
+  border-radius: 12px;
+  overflow: visible;
+}
+
+.state {
+  fill: #e8eef7;
+  stroke: #c5d3e8;
+  stroke-width: 1px;
+}
+
+.state:hover {
+  fill: #dbe5f0;
+}
+
+.data-points circle {
+  transition: r 0.15s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 980px) {

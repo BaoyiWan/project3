@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css" />
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
 </head>
 
 <body>
@@ -66,6 +67,17 @@
           <option value="Sparse Crops">Sparse Crops</option>
           <option value="Intense Cropland">Intense Cropland</option>
         </select>
+      </div>
+    </section>
+
+    <section class="map-section">
+      <div class="chart-card">
+        <h2>Precipitation Intensity Across the United States</h2>
+        <p class="chart-note">
+          This map shows the spatial distribution of data points colored by the selected precipitation metric.
+          Darker shades indicate higher intensity values. Use the precipitation measure dropdown above to change the visualization.
+        </p>
+        <div id="map"></div>
       </div>
     </section>
 
