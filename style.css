@@ -295,6 +295,58 @@ svg {
   line-height: 1.72;
 }
 
+/* ---------- Map Section ---------- */
+
+.map-section {
+  margin: 24px 0;
+}
+
+.map-svg {
+  background: #dce5f1;
+  border-radius: 12px;
+  overflow: visible;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.state {
+  fill: #d1dce8;
+  stroke: #8fa5bf;
+  stroke-width: 1px;
+}
+
+.state:hover {
+  fill: #c5d7e5;
+}
+
+.data-points circle {
+  transition: r 0.15s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+
+.legend-title {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #333;
+  text-anchor: middle;
+}
+
+.legend-bar {
+  cursor: pointer;
+}
+
+.legend-bar:hover {
+  opacity: 0.85;
+}
+
+.legend-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #555;
+  dominant-baseline: hanging;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 980px) {

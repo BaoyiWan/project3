@@ -51,8 +51,10 @@ Promise.all([
   pointsData = points;
   summaryData = summary;
 
+  updateMapTitle();
   drawViolinPlot();
   drawBarChart();
+  drawMap();
 
   d3.select("#measure-select")
     .on("change", function() {
@@ -67,8 +69,10 @@ Promise.all([
 });
 
 function updateCharts() {
+  updateMapTitle();
   drawViolinPlot();
   drawBarChart();
+  drawMap();
 }
 
 function getCurrentMeasure() {
@@ -87,6 +91,25 @@ function getFilteredPoints() {
   }
 
   return pointsData.filter(d => d.crop_zone === selectedZone);
+}
+
+function updateMapTitle() {
+  const measure = getCurrentMeasure();
+
+  const titleMap = {
+    precip_intensity: "Overall Precipitation Across the United States",
+    rain_proxy: "Rain Intensity Across the United States",
+    snow_proxy: "Snow Intensity Across the United States"
+  };
+
+  const descriptionMap = {
+    precip_intensity: "This map shows the spatial distribution of data points colored by overall precipitation intensity. Darker shades indicate higher intensity values. Use the precipitation measure dropdown above to change the visualization.",
+    rain_proxy: "This map shows the spatial distribution of data points colored by rain intensity. Darker shades indicate higher rain intensity values. Use the precipitation measure dropdown above to change the visualization.",
+    snow_proxy: "This map shows the spatial distribution of data points colored by snow intensity. Darker shades indicate higher snow intensity values. Use the precipitation measure dropdown above to change the visualization."
+  };
+
+  d3.select("#map-title").text(titleMap[measure]);
+  d3.select("#map-description").text(descriptionMap[measure]);
 }
 
 // function drawScatterplot() {
@@ -535,4 +558,178 @@ function drawBarChart() {
     .attr("y", d => y(d[summaryCol]) - 8)
     .attr("text-anchor", "middle")
     .text(d => d[summaryCol].toFixed(1));
+}
+
+function drawMap() {
+  const measure = getCurrentMeasure();
+  const data = getFilteredPoints();
+
+  if (!data.length) return;
+
+  d3.select("#map").selectAll("*").remove();
+
+  const mapWidth = 900;
+  const mapHeight = 550;
+
+  console.log("drawMap() called with metric:", measure);
+
+  // Load US states TopoJSON
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+    console.log("TopoJSON loaded:", us);
+
+    // Create SVG with proper dimensions
+    const svg = d3.select("#map")
+      .append("svg")
+      .attr("width", mapWidth)
+      .attr("height", mapHeight)
+      .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
+      .attr("class", "map-svg");
+
+    // Get US states feature and fit projection
+    const usStates = topojson.feature(us, us.objects.states);
+    console.log("US States feature:", usStates);
+
+    // Create projection fitted to US states
+    const projection = d3.geoAlbersUsa()
+      .fitSize([mapWidth, mapHeight], usStates);
+
+    const path = d3.geoPath().projection(projection);
+
+    // Draw state boundaries
+    svg.append("g")
+      .attr("class", "states")
+      .selectAll("path")
+      .data(usStates.features)
+      .join("path")
+      .attr("d", path)
+      .attr("class", "state");
+
+    console.log("States drawn. Total states:", usStates.features.length);
+
+    // Get value range for color scale
+    const values = data
+      .map(d => +d[measure])
+      .filter(v => !isNaN(v));
+
+    const minVal = d3.min(values);
+    const maxVal = d3.max(values);
+
+    console.log("Color scale domain:", minVal, "to", maxVal);
+
+    // Color scale for precipitation metrics
+    const colorScale = d3.scaleSequential()
+      .domain([minVal, maxVal])
+      .interpolator(d3.interpolateYlOrRd);
+
+    // Draw data points
+    const pointsGroup = svg.append("g")
+      .attr("class", "data-points");
+
+    pointsGroup.selectAll("circle")
+      .data(data)
+      .join("circle")
+      .attr("cx", d => {
+        const coords = projection([d.lon, d.lat]);
+        return coords ? coords[0] : 0;
+      })
+      .attr("cy", d => {
+        const coords = projection([d.lon, d.lat]);
+        return coords ? coords[1] : 0;
+      })
+      .attr("r", 2)
+      .attr("fill", d => colorScale(d[measure]))
+      .attr("opacity", 0.65)
+      .on("mouseover", function(event, d) {
+        d3.select(this)
+          .attr("r", 5)
+          .attr("opacity", 1);
+
+        tooltip
+          .style("opacity", 1)
+          .html(`
+            <strong>${measureLabels[measure]}: ${d[measure].toFixed(2)}</strong><br>
+            Crop Zone: ${d.crop_zone}<br>
+            Lon: ${d.lon.toFixed(2)}, Lat: ${d.lat.toFixed(2)}<br>
+            Crop Density: ${d.crop_density.toFixed(0)}
+          `);
+      })
+      .on("mousemove", function(event) {
+        tooltip
+          .style("left", `${event.pageX + 14}px`)
+          .style("top", `${event.pageY - 28}px`);
+      })
+      .on("mouseout", function() {
+        d3.select(this)
+          .attr("r", 2)
+          .attr("opacity", 0.65);
+
+        tooltip.style("opacity", 0);
+      });
+
+    // Add gradient legend
+    const legendWidth = 280;
+    const legendHeight = 20;
+    const legendX = mapWidth / 2 - legendWidth / 2;
+    const legendY = mapHeight - 70;
+
+    // Create defs for gradient
+    const defs = svg.append("defs");
+    const gradient = defs.append("linearGradient")
+      .attr("id", "legend-gradient")
+      .attr("x1", "0%")
+      .attr("x2", "100%");
+
+    // Add color stops from YlOrRd
+    const numStops = 10;
+    for (let i = 0; i <= numStops; i++) {
+      const t = i / numStops;
+      gradient.append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", d3.interpolateYlOrRd(t));
+    }
+
+    // Legend title
+    svg.append("text")
+      .attr("class", "legend-title")
+      .attr("x", legendX)
+      .attr("y", legendY - 15)
+      .text("Precipitation Intensity Scale");
+
+    // Legend background rect
+    svg.append("rect")
+      .attr("class", "legend-bar")
+      .attr("x", legendX)
+      .attr("y", legendY)
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .attr("fill", "url(#legend-gradient)")
+      .attr("stroke", "#999")
+      .attr("stroke-width", 1);
+
+    // Legend scale
+    const legendScale = d3.scaleLinear()
+      .domain([minVal, maxVal])
+      .range([legendX, legendX + legendWidth]);
+
+    // Min value text
+    svg.append("text")
+      .attr("class", "legend-label")
+      .attr("x", legendX)
+      .attr("y", legendY + legendHeight + 14)
+      .attr("text-anchor", "start")
+      .text(minVal.toFixed(1));
+
+    // Max value text
+    svg.append("text")
+      .attr("class", "legend-label")
+      .attr("x", legendX + legendWidth)
+      .attr("y", legendY + legendHeight + 14)
+      .attr("text-anchor", "end")
+      .text(maxVal.toFixed(1));
+
+    console.log("Map rendered successfully with", data.length, "data points");
+
+  }).catch(error => {
+    console.error("Error loading TopoJSON:", error);
+  });
 }
