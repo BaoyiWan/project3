@@ -541,7 +541,7 @@ function drawBarChart() {
 
 function drawMap() {
   const measure = getCurrentMeasure();
-  const data = pointsData;
+  const data = getFilteredPoints();
 
   if (!data.length) return;
 
