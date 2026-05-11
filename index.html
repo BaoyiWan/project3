@@ -51,17 +51,8 @@
 
     <section class="controls">
       <div class="control-group">
-        <label for="measure-select">Precipitation measure:</label>
+        <label for="measure-select">Measure:</label>
         <select id="measure-select">
-          <option value="precip_intensity">Overall Precipitation Proxy</option>
-          <option value="rain_proxy">Rain Proxy</option>
-          <option value="snow_proxy">Snow Proxy</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label for="map-layer-select">Map layer:</label>
-        <select id="map-layer-select">
           <option value="precip_intensity">Overall Precipitation Proxy</option>
           <option value="rain_proxy">Rain Proxy</option>
           <option value="snow_proxy">Snow Proxy</option>
@@ -84,8 +75,8 @@
       <div class="chart-card">
         <h2 id="map-title">Precipitation Intensity Across the United States</h2>
         <p class="chart-note" id="map-description">
-          This map shows the spatial distribution of data points colored by the selected precipitation metric.
-          Darker shades indicate higher intensity values. Use the precipitation measure dropdown above to change the visualization.
+          This map shows the spatial distribution of data points colored by the selected metric.
+          Darker shades indicate higher intensity values. Use the measure dropdown above to change the visualization.
         </p>
         <div id="map"></div>
       </div>

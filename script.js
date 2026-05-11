@@ -4,13 +4,15 @@ const summaryFile = "data/crop_zone_summary.csv";
 const measureLabels = {
   precip_intensity: "Overall Precipitation Proxy",
   rain_proxy: "Rain Proxy",
-  snow_proxy: "Snow Proxy"
+  snow_proxy: "Snow Proxy",
+  crop_density: "Cropland Density"
 };
 
 const summaryColumns = {
   precip_intensity: "avg_precip",
   rain_proxy: "avg_rain",
-  snow_proxy: "avg_snow"
+  snow_proxy: "avg_snow",
+  crop_density: "avg_crop_density"
 };
 
 const colorScale = d3.scaleOrdinal()
@@ -23,14 +25,6 @@ let pointsData;
 let summaryData;
 
 let currentMetric = "precip_intensity";
-let currentMapLayer = "precip_intensity";
-
-const mapLayerLabels = {
-  precip_intensity: "Overall Precipitation Proxy",
-  rain_proxy: "Rain Proxy",
-  snow_proxy: "Snow Proxy",
-  crop_density: "Cropland Density"
-};
 
 const mapLayerInterpolators = {
   precip_intensity: d3.interpolateYlOrRd,
@@ -69,20 +63,12 @@ Promise.all([
   updateMapTitle();
   drawViolinPlot();
   drawBarChart();
-  updateMapTitle();
   drawMap();
 
   d3.select("#measure-select")
     .on("change", function() {
       currentMetric = this.value;
       updateCharts();
-    });
-
-  d3.select("#map-layer-select")
-    .on("change", function() {
-      currentMapLayer = this.value;
-      updateMapTitle();
-      drawMap();
     });
 
   d3.select("#zone-select")
@@ -104,10 +90,6 @@ function getCurrentZone() {
   return d3.select("#zone-select").property("value");
 }
 
-function getCurrentMapLayer() {
-  return d3.select("#map-layer-select").property("value");
-}
-
 function getFilteredPoints() {
   const selectedZone = getCurrentZone();
 
@@ -119,7 +101,7 @@ function getFilteredPoints() {
 }
 
 function updateMapTitle() {
-  const mapLayer = getCurrentMapLayer();
+  const measure = getCurrentMeasure();
 
   const titleMap = {
     precip_intensity: "Overall Precipitation Across the United States",
@@ -135,8 +117,8 @@ function updateMapTitle() {
     crop_density: "This map shows the spatial distribution of data points colored by cropland density. Darker shades indicate higher crop density values on a green scale."
   };
 
-  d3.select("#map-title").text(titleMap[mapLayer]);
-  d3.select("#map-description").text(descriptionMap[mapLayer]);
+  d3.select("#map-title").text(titleMap[measure]);
+  d3.select("#map-description").text(descriptionMap[measure]);
 }
 
 // function drawScatterplot() {
@@ -588,7 +570,7 @@ function drawBarChart() {
 }
 
 function drawMap() {
-  const mapLayer = getCurrentMapLayer();
+  const measure = getCurrentMeasure();
   const data = getFilteredPoints();
 
   if (!data.length) return;
@@ -598,7 +580,7 @@ function drawMap() {
   const mapWidth = 900;
   const mapHeight = 550;
 
-  console.log("drawMap() called with map layer:", mapLayer);
+  console.log("drawMap() called with measure:", measure);
 
   // Load US states TopoJSON
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
@@ -635,7 +617,7 @@ function drawMap() {
 
     // Get value range for color scale
     const values = data
-      .map(d => +d[mapLayer])
+      .map(d => +d[measure])
       .filter(v => !isNaN(v));
 
     const minVal = d3.min(values);
@@ -645,12 +627,12 @@ function drawMap() {
 
     const colorScale = d3.scaleSequential()
       .domain([minVal, maxVal])
-      .interpolator(mapLayerInterpolators[mapLayer] || d3.interpolateYlOrRd);
+      .interpolator(mapLayerInterpolators[measure] || d3.interpolateYlOrRd);
 
     const projectedPoints = data
       .map(d => {
         const coords = projection([d.lon, d.lat]);
-        return coords && Array.isArray(coords) ? { ...d, proj: coords, mapValue: +d[mapLayer] } : null;
+        return coords && Array.isArray(coords) ? { ...d, proj: coords, mapValue: +d[measure] } : null;
       })
       .filter(d => {
         if (!d || !Array.isArray(d.proj)) return false;
@@ -679,7 +661,7 @@ function drawMap() {
         tooltip
           .style("opacity", 1)
           .html(`
-            <strong>${mapLayerLabels[mapLayer]}: ${d.mapValue.toFixed(2)}</strong><br>
+            <strong>${measureLabels[measure]}: ${d.mapValue.toFixed(2)}</strong><br>
             Crop Zone: ${d.crop_zone}<br>
             Lon: ${d.lon.toFixed(2)}, Lat: ${d.lat.toFixed(2)}<br>
             Crop Density: ${d.crop_density.toFixed(0)}
@@ -711,7 +693,7 @@ function drawMap() {
       .attr("x2", "100%");
 
     // Add color stops from layer palette
-    const interp = mapLayerInterpolators[mapLayer] || d3.interpolateYlOrRd;
+    const interp = mapLayerInterpolators[measure] || d3.interpolateYlOrRd;
     const numStops = 10;
     for (let i = 0; i <= numStops; i++) {
       const t = i / numStops;
@@ -725,7 +707,7 @@ function drawMap() {
       .attr("class", "legend-title")
       .attr("x", legendX + legendWidth / 2)
       .attr("y", legendY - 12)
-      .text(`${mapLayerLabels[mapLayer]} Scale`);
+      .text(`${measureLabels[measure]} Scale`);
 
     // Legend background rect
     svg.append("rect")
