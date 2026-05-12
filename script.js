@@ -468,7 +468,7 @@ function drawViolinPlot() {
 
     // });
 
-  drawLegend(svg, width - 170, -10);
+  drawLegend(svg, width - 145, -36);
 
 
 }
@@ -476,6 +476,7 @@ function drawViolinPlot() {
 
 function drawLegend(svg, x, y) {
   const zones = ["Non-Agricultural", "Sparse Crops", "Intense Cropland"];
+  const rowHeight = 17;
 
   const legend = svg.append("g")
     .attr("class", "legend")
@@ -483,10 +484,10 @@ function drawLegend(svg, x, y) {
 
   legend.append("rect")
     .attr("x", -10)
-    .attr("y", -18)
-    .attr("width", 170)
-    .attr("height", 84)
-    .attr("rx", 8)
+    .attr("y", -12)
+    .attr("width", 145)
+    .attr("height", 58)
+    .attr("rx", 7)
     .attr("fill", "white")
     .attr("fill-opacity", 0.93)
     .attr("stroke", "#e8dfd0")
@@ -494,15 +495,17 @@ function drawLegend(svg, x, y) {
 
   zones.forEach((zone, i) => {
     const row = legend.append("g")
-      .attr("transform", `translate(0,${i * 22})`);
+      .attr("transform", `translate(0,${i * rowHeight})`);
 
     row.append("circle")
-      .attr("r", 6)
+      .attr("r", 5)
       .attr("fill", colorScale(zone));
 
     row.append("text")
-      .attr("x", 12)
+      .attr("x", 10)
       .attr("y", 4)
+      .attr("font-size", 11)
+      .attr("font-weight", 600)
       .text(zone);
   });
 }
