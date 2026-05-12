@@ -35,22 +35,22 @@ const mapLayerInterpolators = {
 
 let usTopoCached = null;
 let usTopoPromise = null;
-let conusStatesCached = null;
 
-// Alaska=2, Hawaii=15, Puerto Rico=72 (FIPS). us-atlas may store ids as strings ("02") or
-// numbers (2) depending on the build, so coerce with +f.id for a robust comparison.
-const conusExcludedFips = new Set([2, 15, 72]);
-
-function buildConusFromTopo(us) {
-  const allStates = topojson.feature(us, us.objects.states);
-  return {
-    type: "FeatureCollection",
-    features: allStates.features.filter(f => !conusExcludedFips.has(+f.id))
-  };
+function showMapSkeleton() {
+  const container = d3.select("#map");
+  if (container.select(".map-skeleton").empty()) {
+    const skel = container.append("div").attr("class", "map-skeleton");
+    skel.append("div").attr("class", "map-skeleton__spinner");
+    skel.append("div").attr("class", "map-skeleton__label").text("Loading map…");
+  }
 }
 
-function inConusBbox(d) {
-  return d.lon >= -125 && d.lon <= -66 && d.lat >= 24 && d.lat <= 50;
+function hideMapSkeleton() {
+  const skel = d3.select("#map").select(".map-skeleton");
+  if (!skel.empty()) {
+    skel.classed("is-hidden", true);
+    setTimeout(() => skel.remove(), 400);
+  }
 }
 
 function loadUsTopo() {
@@ -60,36 +60,6 @@ function loadUsTopo() {
     .then(us => { usTopoCached = us; return us; });
   return usTopoPromise;
 }
-
-function showChartSkeleton(containerId, label = "Loading…") {
-  const container = d3.select(`#${containerId}`);
-  if (container.select(".chart-skeleton").empty()) {
-    const skel = container.append("div").attr("class", "chart-skeleton");
-    skel.append("div").attr("class", "chart-skeleton__spinner");
-    skel.append("div").attr("class", "chart-skeleton__label").text(label);
-  }
-}
-
-function hideChartSkeleton(containerId) {
-  const skel = d3.select(`#${containerId}`).select(".chart-skeleton");
-  if (!skel.empty()) {
-    skel.classed("is-hidden", true);
-    setTimeout(() => skel.remove(), 400);
-  }
-}
-
-function showMapSkeleton() {
-  showChartSkeleton("map", "Loading map…");
-}
-
-function hideMapSkeleton() {
-  hideChartSkeleton("map");
-}
-
-// Show skeletons immediately so the frames are visible while data loads.
-showMapSkeleton();
-showChartSkeleton("violinplot", "Loading chart…");
-showChartSkeleton("barchart", "Loading chart…");
 
 Promise.all([
   d3.csv(pointFile, d => ({
@@ -108,21 +78,15 @@ Promise.all([
     avg_rain: +d.avg_rain,
     avg_snow: +d.avg_snow,
     count: +d.count
-  })),
-  loadUsTopo()
+  }))
 ])
-.then(([points, summary, us]) => {
+.then(([points, summary]) => {
 
-  // Build CONUS feature collection (exclude Alaska=02, Hawaii=15, Puerto Rico=72)
-  conusStatesCached = buildConusFromTopo(us);
+  console.log(points);
+  console.log(summary);
 
-  // Drop points outside CONUS (Canada, Mexico, lakes, oceans). Bbox prefilter for speed.
-  pointsData = points.filter(d =>
-    inConusBbox(d) && d3.geoContains(conusStatesCached, [d.lon, d.lat])
-  );
+  pointsData = points;
   summaryData = summary;
-
-  console.log("Loaded points (CONUS-filtered):", pointsData.length, "of", points.length);
 
   updateMapTitle();
   drawViolinPlot();
@@ -168,10 +132,10 @@ function updateMapTitle() {
   const measure = getCurrentMeasure();
 
   const titleMap = {
-    precip_intensity: "Overall Precipitation Across the Contiguous United States",
-    rain_proxy: "Rain Intensity Across the Contiguous United States",
-    snow_proxy: "Snow Intensity Across the Contiguous United States",
-    crop_density: "Cropland Density Across the Contiguous United States"
+    precip_intensity: "Overall Precipitation Across the United States",
+    rain_proxy: "Rain Intensity Across the United States",
+    snow_proxy: "Snow Intensity Across the United States",
+    crop_density: "Cropland Density Across the United States"
   };
 
   const descriptionMap = {
@@ -502,7 +466,7 @@ function drawViolinPlot() {
 
   drawLegend(svg, width - 30, -10);
 
-  hideChartSkeleton("violinplot");
+
 }
 
 
@@ -631,8 +595,6 @@ function drawBarChart() {
     .attr("y", d => y(d[summaryCol]) - 8)
     .attr("text-anchor", "middle")
     .text(d => d[summaryCol].toFixed(1));
-
-  hideChartSkeleton("barchart");
 }
 
 function drawMap() {
@@ -651,10 +613,7 @@ function drawMap() {
   console.log("drawMap() called with measure:", measure);
 
   loadUsTopo().then(us => {
-    // Lazily build CONUS feature collection if it wasn't done during initial load
-    if (!conusStatesCached) {
-      conusStatesCached = buildConusFromTopo(us);
-    }
+    console.log("TopoJSON loaded:", us);
 
     // Create SVG with proper dimensions (starts hidden, fades in once drawn)
     const svg = d3.select("#map")
@@ -664,20 +623,26 @@ function drawMap() {
       .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
       .attr("class", "map-svg");
 
-    // CONUS-only Albers projection fitted to the lower 48 + DC
-    const projection = d3.geoAlbers()
-      .fitSize([mapWidth, mapHeight], conusStatesCached);
+    // Get US states feature and fit projection
+    const usStates = topojson.feature(us, us.objects.states);
+    console.log("US States feature:", usStates);
+
+    // Create projection fitted to US states
+    const projection = d3.geoAlbersUsa()
+      .fitSize([mapWidth, mapHeight], usStates);
 
     const path = d3.geoPath().projection(projection);
 
-    // Draw state boundaries (CONUS only)
+    // Draw state boundaries
     svg.append("g")
       .attr("class", "states")
       .selectAll("path")
-      .data(conusStatesCached.features)
+      .data(usStates.features)
       .join("path")
       .attr("d", path)
       .attr("class", "state");
+
+    console.log("States drawn. Total states:", usStates.features.length);
 
     // Get value range for color scale
     const values = data

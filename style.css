@@ -308,17 +308,6 @@ svg {
   overflow: hidden;
 }
 
-#violinplot,
-#barchart {
-  position: relative;
-  min-height: 420px;
-  border-radius: 12px;
-}
-
-#barchart {
-  min-height: 460px;
-}
-
 .map-svg {
   background: #dce5f1;
   border-radius: 12px;
@@ -334,32 +323,14 @@ svg {
   opacity: 1;
 }
 
-/* Generic chart skeleton: shimmering placeholder + brown spinner */
-.chart-skeleton {
+.map-skeleton {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  background: linear-gradient(
-    100deg,
-    #f1ebdf 30%,
-    #faf6ec 50%,
-    #f1ebdf 70%
-  );
-  background-size: 200% 100%;
-  animation: chart-shimmer 1.4s linear infinite;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-  z-index: 1;
-}
-
-/* Map skeleton uses a blue tint to match the map background. */
-#map .chart-skeleton {
+  gap: 18px;
   background: linear-gradient(
     100deg,
     #dce5f1 30%,
@@ -367,44 +338,39 @@ svg {
     #dce5f1 70%
   );
   background-size: 200% 100%;
-  border-color: #c7d3e2;
+  animation: map-shimmer 1.4s linear infinite;
+  border-radius: 12px;
+  border: 1px solid #c7d3e2;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
 }
 
-.chart-skeleton.is-hidden {
+.map-skeleton.is-hidden {
   opacity: 0;
 }
 
-.chart-skeleton__spinner {
+.map-skeleton__spinner {
   width: 42px;
   height: 42px;
   border: 4px solid rgba(139, 69, 19, 0.18);
   border-top-color: var(--accent);
   border-radius: 50%;
-  animation: chart-spin 0.9s linear infinite;
+  animation: map-spin 0.9s linear infinite;
 }
 
-.chart-skeleton__label {
+.map-skeleton__label {
   font-size: 13px;
   font-weight: 700;
   color: #4a6079;
   letter-spacing: 0.4px;
 }
 
-#map .chart-skeleton__label {
-  color: #4a6079;
-}
-
-#violinplot .chart-skeleton__label,
-#barchart .chart-skeleton__label {
-  color: #6b5a3f;
-}
-
-@keyframes chart-shimmer {
+@keyframes map-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
-@keyframes chart-spin {
+@keyframes map-spin {
   to { transform: rotate(360deg); }
 }
 
@@ -412,7 +378,10 @@ svg {
   fill: #d1dce8;
   stroke: #8fa5bf;
   stroke-width: 1px;
-  pointer-events: none;
+}
+
+.state:hover {
+  fill: #c5d7e5;
 }
 
 .data-points circle {
