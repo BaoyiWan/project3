@@ -342,8 +342,8 @@ svg {
 
 .legend-label {
   font-size: 12px;
-  font-weight: 600;
-  fill: #555;
+  font-weight: 700;
+  fill: #333;
   dominant-baseline: hanging;
 }
 

@@ -4,13 +4,15 @@ const summaryFile = "data/crop_zone_summary.csv";
 const measureLabels = {
   precip_intensity: "Overall Precipitation Proxy",
   rain_proxy: "Rain Proxy",
-  snow_proxy: "Snow Proxy"
+  snow_proxy: "Snow Proxy",
+  crop_density: "Cropland Density"
 };
 
 const summaryColumns = {
   precip_intensity: "avg_precip",
   rain_proxy: "avg_rain",
-  snow_proxy: "avg_snow"
+  snow_proxy: "avg_snow",
+  crop_density: "avg_crop_density"
 };
 
 const colorScale = d3.scaleOrdinal()
@@ -23,6 +25,13 @@ let pointsData;
 let summaryData;
 
 let currentMetric = "precip_intensity";
+
+const mapLayerInterpolators = {
+  precip_intensity: d3.interpolateYlOrRd,
+  rain_proxy: d3.interpolateBlues,
+  snow_proxy: d3.interpolatePuBu,
+  crop_density: d3.interpolateGreens
+};
 
 Promise.all([
   d3.csv(pointFile, d => ({
@@ -58,9 +67,7 @@ Promise.all([
 
   d3.select("#measure-select")
     .on("change", function() {
-
       currentMetric = this.value;
-
       updateCharts();
     });
 
@@ -99,13 +106,15 @@ function updateMapTitle() {
   const titleMap = {
     precip_intensity: "Overall Precipitation Across the United States",
     rain_proxy: "Rain Intensity Across the United States",
-    snow_proxy: "Snow Intensity Across the United States"
+    snow_proxy: "Snow Intensity Across the United States",
+    crop_density: "Cropland Density Across the United States"
   };
 
   const descriptionMap = {
-    precip_intensity: "This map shows the spatial distribution of data points colored by overall precipitation intensity. Darker shades indicate higher intensity values. Use the precipitation measure dropdown above to change the visualization.",
-    rain_proxy: "This map shows the spatial distribution of data points colored by rain intensity. Darker shades indicate higher rain intensity values. Use the precipitation measure dropdown above to change the visualization.",
-    snow_proxy: "This map shows the spatial distribution of data points colored by snow intensity. Darker shades indicate higher snow intensity values. Use the precipitation measure dropdown above to change the visualization."
+    precip_intensity: "This map shows the spatial distribution of data points colored by overall precipitation intensity. Darker shades indicate higher precipitation values on a yellow-to-red scale.",
+    rain_proxy: "This map shows the spatial distribution of data points colored by rain intensity. Darker shades indicate higher rain values on a blue scale.",
+    snow_proxy: "This map shows the spatial distribution of data points colored by snow intensity. Darker shades indicate higher snow values on a blue-purple scale.",
+    crop_density: "This map shows the spatial distribution of data points colored by cropland density. Darker shades indicate higher crop density values on a green scale."
   };
 
   d3.select("#map-title").text(titleMap[measure]);
@@ -571,7 +580,7 @@ function drawMap() {
   const mapWidth = 900;
   const mapHeight = 550;
 
-  console.log("drawMap() called with metric:", measure);
+  console.log("drawMap() called with measure:", measure);
 
   // Load US states TopoJSON
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
@@ -616,28 +625,33 @@ function drawMap() {
 
     console.log("Color scale domain:", minVal, "to", maxVal);
 
-    // Color scale for precipitation metrics
     const colorScale = d3.scaleSequential()
       .domain([minVal, maxVal])
-      .interpolator(d3.interpolateYlOrRd);
+      .interpolator(mapLayerInterpolators[measure] || d3.interpolateYlOrRd);
+
+    const projectedPoints = data
+      .map(d => {
+        const coords = projection([d.lon, d.lat]);
+        return coords && Array.isArray(coords) ? { ...d, proj: coords, mapValue: +d[measure] } : null;
+      })
+      .filter(d => {
+        if (!d || !Array.isArray(d.proj)) return false;
+        const x = d.proj[0];
+        const y = d.proj[1];
+        return Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= mapWidth && y >= 0 && y <= mapHeight;
+      });
 
     // Draw data points
     const pointsGroup = svg.append("g")
       .attr("class", "data-points");
 
     pointsGroup.selectAll("circle")
-      .data(data)
+      .data(projectedPoints)
       .join("circle")
-      .attr("cx", d => {
-        const coords = projection([d.lon, d.lat]);
-        return coords ? coords[0] : 0;
-      })
-      .attr("cy", d => {
-        const coords = projection([d.lon, d.lat]);
-        return coords ? coords[1] : 0;
-      })
+      .attr("cx", d => d.proj[0])
+      .attr("cy", d => d.proj[1])
       .attr("r", 2)
-      .attr("fill", d => colorScale(d[measure]))
+      .attr("fill", d => colorScale(d.mapValue))
       .attr("opacity", 0.65)
       .on("mouseover", function(event, d) {
         d3.select(this)
@@ -647,13 +661,12 @@ function drawMap() {
         tooltip
           .style("opacity", 1)
           .html(`
-            <strong>${measureLabels[measure]}: ${d[measure].toFixed(2)}</strong><br>
+            <strong>${measureLabels[measure]}: ${d.mapValue.toFixed(2)}</strong><br>
             Crop Zone: ${d.crop_zone}<br>
             Lon: ${d.lon.toFixed(2)}, Lat: ${d.lat.toFixed(2)}<br>
             Crop Density: ${d.crop_density.toFixed(0)}
           `);
-      })
-      .on("mousemove", function(event) {
+      })      .on("mousemove", function(event) {
         tooltip
           .style("left", `${event.pageX + 14}px`)
           .style("top", `${event.pageY - 28}px`);
@@ -666,11 +679,11 @@ function drawMap() {
         tooltip.style("opacity", 0);
       });
 
-    // Add gradient legend
+    // Add gradient legend (centered horizontally near top, slightly right-shifted)
     const legendWidth = 280;
     const legendHeight = 20;
-    const legendX = mapWidth / 2 - legendWidth / 2;
-    const legendY = mapHeight - 70;
+    const legendX = mapWidth / 2 - legendWidth / 2 + 55;
+    const legendY = 20;
 
     // Create defs for gradient
     const defs = svg.append("defs");
@@ -679,21 +692,22 @@ function drawMap() {
       .attr("x1", "0%")
       .attr("x2", "100%");
 
-    // Add color stops from YlOrRd
+    // Add color stops from layer palette
+    const interp = mapLayerInterpolators[measure] || d3.interpolateYlOrRd;
     const numStops = 10;
     for (let i = 0; i <= numStops; i++) {
       const t = i / numStops;
       gradient.append("stop")
         .attr("offset", `${t * 100}%`)
-        .attr("stop-color", d3.interpolateYlOrRd(t));
+        .attr("stop-color", interp(t));
     }
 
     // Legend title
     svg.append("text")
       .attr("class", "legend-title")
-      .attr("x", legendX)
-      .attr("y", legendY - 15)
-      .text("Precipitation Intensity Scale");
+      .attr("x", legendX + legendWidth / 2)
+      .attr("y", legendY - 8)
+      .text(`${measureLabels[measure]} Scale`);
 
     // Legend background rect
     svg.append("rect")
@@ -715,7 +729,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-label")
       .attr("x", legendX)
-      .attr("y", legendY + legendHeight + 14)
+      .attr("y", legendY + legendHeight + 25)
       .attr("text-anchor", "start")
       .text(minVal.toFixed(1));
 
@@ -723,7 +737,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-label")
       .attr("x", legendX + legendWidth)
-      .attr("y", legendY + legendHeight + 14)
+      .attr("y", legendY + legendHeight + 25)
       .attr("text-anchor", "end")
       .text(maxVal.toFixed(1));
 

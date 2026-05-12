@@ -51,11 +51,12 @@
 
     <section class="controls">
       <div class="control-group">
-        <label for="measure-select">Precipitation measure:</label>
+        <label for="measure-select">Measure:</label>
         <select id="measure-select">
           <option value="precip_intensity">Overall Precipitation Proxy</option>
           <option value="rain_proxy">Rain Proxy</option>
           <option value="snow_proxy">Snow Proxy</option>
+          <option value="crop_density">Cropland Density</option>
         </select>
       </div>
 
@@ -74,8 +75,8 @@
       <div class="chart-card">
         <h2 id="map-title">Precipitation Intensity Across the United States</h2>
         <p class="chart-note" id="map-description">
-          This map shows the spatial distribution of data points colored by the selected precipitation metric.
-          Darker shades indicate higher intensity values. Use the precipitation measure dropdown above to change the visualization.
+          This map shows the spatial distribution of data points colored by the selected metric.
+          Darker shades indicate higher intensity values. Use the measure dropdown above to change the visualization.
         </p>
         <div id="map"></div>
       </div>
@@ -136,7 +137,7 @@
             Sparse Crops and Intense Cropland. Color represents the crop-zone
             category: non-agricultural, sparse crops, or intense cropland. The bar chart
             summarizes the average selected precipitation proxy for each crop-zone group,
-            making the group-level pattern easier to compare. An interactive US map visualization displays the geographic distribution of sampled data points, with a yellow-to-red color scale encoding precipitation intensity values. This spatial view complements the statistical summaries and provides geographic context for the precipitation and cropland patterns.
+            making the group-level pattern easier to compare. An interactive US map visualization displays the geographic distribution of sampled data points, with a yellow-to-red color scale encoding precipitation intensity values. This spatial view complements the statistical summaries and provides geographic context for the precipitation and cropland patterns, while separate map layers distinguish overall precipitation, rain, snow, and cropland density.
           </p>
         </div>
 
@@ -146,7 +147,7 @@
             The precipitation dropdown lets users switch between overall precipitation,
             rain proxy, and snow proxy. The crop-zone dropdown lets users filter the view
             to focus on one land-use category at a time. Hover tooltips reveal the exact
-            proxy values and approximate geographic location for each sampled point. All three visualizations—the violin plot, bar chart, and interactive map—update dynamically and synchronously when dropdown selections change, providing coordinated views of the same underlying data from different analytical perspectives.
+            proxy values and approximate geographic location for each sampled point. A dedicated map layer dropdown also allows switching between overall precipitation, rain, snow, and cropland density, with coordinated tooltips and dynamic updates across the map, violin plot, and bar chart.
           </p>
         </div>
 
@@ -166,7 +167,11 @@
             and exploratory graphs, while another part focused on converting the cleaned data
             into CSV files and rebuilding the visualization in D3. In total, we spent about
             8 people-hours on data cleaning, 6 people-hours on exploratory analysis, and
-            8 people-hours on the D3 webpage and interaction design.
+            8 people-hours on the D3 webpage and interaction design. The final map includes
+            multiple layers for overall precipitation, rain, snow, and cropland density,
+            and uses distinct color palettes so different environmental variables are easier
+            to compare. Filtering and tooltips support details-on-demand, while projected
+            outliers outside the visible US area were filtered to improve readability.
           </p>
         </div>
 
