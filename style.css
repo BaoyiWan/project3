@@ -301,10 +301,6 @@ svg {
   margin: 24px 0;
 }
 
-#map {
-  position: relative;
-}
-
 .map-svg {
   background: #dce5f1;
   border-radius: 12px;
@@ -314,20 +310,19 @@ svg {
   height: auto;
 }
 
-.map-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: auto;
-  cursor: crosshair;
-  border-radius: 12px;
-}
-
 .state {
   fill: #d1dce8;
   stroke: #8fa5bf;
   stroke-width: 1px;
+}
+
+.state:hover {
+  fill: #c5d7e5;
+}
+
+.data-points circle {
+  transition: r 0.15s ease, opacity 0.15s ease;
+  cursor: pointer;
 }
 
 .legend-title {
@@ -350,64 +345,6 @@ svg {
   font-weight: 700;
   fill: #333;
   dominant-baseline: hanging;
-}
-
-/* ---------- Loading overlay ---------- */
-
-.chart-area {
-  position: relative;
-}
-
-.chart-area--map {
-  aspect-ratio: 900 / 550;
-}
-
-.chart-area--violin {
-  aspect-ratio: 620 / 420;
-}
-
-.chart-area--bar {
-  aspect-ratio: 480 / 500;
-}
-
-.chart-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  background: rgba(251, 248, 241, 0.88);
-  border-radius: 12px;
-  z-index: 5;
-  pointer-events: none;
-  transition: opacity 0.45s ease;
-  backdrop-filter: blur(2px);
-}
-
-.chart-loading.hidden {
-  opacity: 0;
-}
-
-.spinner {
-  width: 38px;
-  height: 38px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spinner-rotate 0.85s linear infinite;
-}
-
-.spinner-text {
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-@keyframes spinner-rotate {
-  to { transform: rotate(360deg); }
 }
 
 /* ---------- Responsive ---------- */

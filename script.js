@@ -23,8 +23,6 @@ const tooltip = d3.select("#tooltip");
 
 let pointsData;
 let summaryData;
-let usTopoData;
-let mapInitialized = false;
 
 let currentMetric = "precip_intensity";
 
@@ -52,21 +50,20 @@ Promise.all([
     avg_rain: +d.avg_rain,
     avg_snow: +d.avg_snow,
     count: +d.count
-  })),
-  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+  }))
 ])
-.then(([points, summary, us]) => {
+.then(([points, summary]) => {
+
+  console.log(points);
+  console.log(summary);
 
   pointsData = points;
   summaryData = summary;
-  usTopoData = us;
 
   updateMapTitle();
   drawViolinPlot();
   drawBarChart();
   drawMap();
-
-  hideAllLoaders();
 
   d3.select("#measure-select")
     .on("change", function() {
@@ -78,40 +75,11 @@ Promise.all([
     .on("change", updateCharts);
 });
 
-const LOADER_IDS = ["map-loading", "violinplot-loading", "barchart-loading"];
-
-function showAllLoaders() {
-  LOADER_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove("hidden");
-  });
-}
-
-function hideAllLoaders() {
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      LOADER_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add("hidden");
-      });
-    });
-  });
-}
-
-let switchLoaderTimer = null;
-
 function updateCharts() {
-  if (switchLoaderTimer) clearTimeout(switchLoaderTimer);
-  switchLoaderTimer = setTimeout(showAllLoaders, 120);
-
   updateMapTitle();
   drawViolinPlot();
   drawBarChart();
   drawMap();
-
-  clearTimeout(switchLoaderTimer);
-  switchLoaderTimer = null;
-  hideAllLoaders();
 }
 
 function getCurrentMeasure() {
@@ -468,7 +436,7 @@ function drawViolinPlot() {
 
     // });
 
-  drawLegend(svg, width - 145, -40);
+  drawLegend(svg, width - 30, -10);
 
 
 }
@@ -476,7 +444,6 @@ function drawViolinPlot() {
 
 function drawLegend(svg, x, y) {
   const zones = ["Non-Agricultural", "Sparse Crops", "Intense Cropland"];
-  const rowHeight = 17;
 
   const legend = svg.append("g")
     .attr("class", "legend")
@@ -484,28 +451,24 @@ function drawLegend(svg, x, y) {
 
   legend.append("rect")
     .attr("x", -10)
-    .attr("y", -12)
-    .attr("width", 145)
-    .attr("height", 58)
-    .attr("rx", 7)
+    .attr("y", -18)
+    .attr("width", 170)
+    .attr("height", 84)
+    .attr("rx", 8)
     .attr("fill", "white")
-    .attr("fill-opacity", 0.93)
-    .attr("stroke", "#e8dfd0")
-    .attr("stroke-width", 1);
+    .attr("opacity", 0.85);
 
   zones.forEach((zone, i) => {
     const row = legend.append("g")
-      .attr("transform", `translate(0,${i * rowHeight})`);
+      .attr("transform", `translate(0,${i * 22})`);
 
     row.append("circle")
-      .attr("r", 5)
+      .attr("r", 6)
       .attr("fill", colorScale(zone));
 
     row.append("text")
-      .attr("x", 10)
+      .attr("x", 12)
       .attr("y", 4)
-      .attr("font-size", 11)
-      .attr("font-weight", 600)
       .text(zone);
   });
 }
@@ -606,298 +569,181 @@ function drawBarChart() {
     .text(d => d[summaryCol].toFixed(1));
 }
 
-const MAP_WIDTH = 900;
-const MAP_HEIGHT = 550;
-let mapProjection;
-let mapCanvas, mapCtx;
-let hoverCanvas, hoverCtx;
-let allProjectedPoints = [];
-let mapQuadtree = null;
-let mapCurrentMeasure = "precip_intensity";
-let mapInterpolator = d3.interpolateYlOrRd;
-let mapMinVal = 0;
-let mapMaxVal = 1;
-let mapAnimTimer = null;
-let lastFillColors = new Map();
-let mapFirstRender = true;
-let hoveredPoint = null;
-
 function drawMap() {
-  if (!usTopoData) return;
-
-  if (!mapInitialized) {
-    initMapBase();
-    projectAllPoints();
-    setupMapCanvas();
-    mapInitialized = true;
-  }
-
-  renderMapPoints();
-  updateMapLegend();
-}
-
-function initMapBase() {
-  const container = d3.select("#map");
-
-  const svg = container.append("svg")
-    .attr("class", "map-svg")
-    .attr("width", MAP_WIDTH)
-    .attr("height", MAP_HEIGHT)
-    .attr("viewBox", `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`);
-
-  const usStates = topojson.feature(usTopoData, usTopoData.objects.states);
-  mapProjection = d3.geoAlbersUsa().fitSize([MAP_WIDTH, MAP_HEIGHT], usStates);
-  const path = d3.geoPath().projection(mapProjection);
-
-  svg.append("g")
-    .attr("class", "states")
-    .selectAll("path")
-    .data(usStates.features)
-    .join("path")
-    .attr("d", path)
-    .attr("class", "state");
-
-  svg.append("defs").append("linearGradient")
-    .attr("id", "legend-gradient")
-    .attr("x1", "0%")
-    .attr("x2", "100%");
-
-  const legendWidth = 280;
-  const legendHeight = 20;
-  const legendX = MAP_WIDTH / 2 - legendWidth / 2 + 55;
-  const legendY = 20;
-
-  svg.append("text")
-    .attr("class", "legend-title")
-    .attr("x", legendX + legendWidth / 2)
-    .attr("y", legendY - 8);
-
-  svg.append("rect")
-    .attr("class", "legend-bar")
-    .attr("x", legendX)
-    .attr("y", legendY)
-    .attr("width", legendWidth)
-    .attr("height", legendHeight)
-    .attr("fill", "url(#legend-gradient)")
-    .attr("stroke", "#999")
-    .attr("stroke-width", 1);
-
-  svg.append("text")
-    .attr("class", "legend-label legend-min")
-    .attr("x", legendX)
-    .attr("y", legendY + legendHeight + 25)
-    .attr("text-anchor", "start");
-
-  svg.append("text")
-    .attr("class", "legend-label legend-max")
-    .attr("x", legendX + legendWidth)
-    .attr("y", legendY + legendHeight + 25)
-    .attr("text-anchor", "end");
-}
-
-function projectAllPoints() {
-  allProjectedPoints = [];
-  for (const d of pointsData) {
-    const coords = mapProjection([d.lon, d.lat]);
-    if (!coords) continue;
-    const px = coords[0];
-    const py = coords[1];
-    if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
-    if (px < 0 || px > MAP_WIDTH || py < 0 || py > MAP_HEIGHT) continue;
-    allProjectedPoints.push({ ...d, projX: px, projY: py });
-  }
-}
-
-function setupMapCanvas() {
-  const dpr = window.devicePixelRatio || 1;
-  const container = d3.select("#map");
-
-  mapCanvas = container.append("canvas")
-    .attr("class", "map-canvas")
-    .attr("width", MAP_WIDTH * dpr)
-    .attr("height", MAP_HEIGHT * dpr)
-    .node();
-  mapCtx = mapCanvas.getContext("2d");
-  mapCtx.scale(dpr, dpr);
-
-  hoverCanvas = container.append("canvas")
-    .attr("class", "map-canvas map-canvas-hover")
-    .attr("width", MAP_WIDTH * dpr)
-    .attr("height", MAP_HEIGHT * dpr)
-    .node();
-  hoverCtx = hoverCanvas.getContext("2d");
-  hoverCtx.scale(dpr, dpr);
-
-  hoverCanvas.addEventListener("mousemove", handleMapCanvasMove);
-  hoverCanvas.addEventListener("mouseleave", handleMapCanvasLeave);
-}
-
-function renderMapPoints() {
   const measure = getCurrentMeasure();
-  const zone = getCurrentZone();
-  const interp = mapLayerInterpolators[measure] || d3.interpolateYlOrRd;
+  const data = getFilteredPoints();
 
-  mapCurrentMeasure = measure;
-  mapInterpolator = interp;
+  if (!data.length) return;
 
-  const visiblePoints = (zone === "All")
-    ? allProjectedPoints
-    : allProjectedPoints.filter(d => d.crop_zone === zone);
+  d3.select("#map").selectAll("*").remove();
 
-  const values = visiblePoints.map(d => +d[measure]).filter(v => !isNaN(v));
-  mapMinVal = d3.min(values);
-  mapMaxVal = d3.max(values);
-  const colorScale = d3.scaleSequential().domain([mapMinVal, mapMaxVal]).interpolator(interp);
+  const mapWidth = 900;
+  const mapHeight = 550;
 
-  const newColors = new Map();
-  for (let i = 0; i < visiblePoints.length; i++) {
-    const d = visiblePoints[i];
-    newColors.set(d, colorScale(+d[measure]));
-  }
+  console.log("drawMap() called with measure:", measure);
 
-  mapQuadtree = d3.quadtree()
-    .x(d => d.projX)
-    .y(d => d.projY)
-    .addAll(visiblePoints);
+  // Load US states TopoJSON
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+    console.log("TopoJSON loaded:", us);
 
-  if (hoverCtx) {
-    hoverCtx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    hoveredPoint = null;
-  }
+    // Create SVG with proper dimensions
+    const svg = d3.select("#map")
+      .append("svg")
+      .attr("width", mapWidth)
+      .attr("height", mapHeight)
+      .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
+      .attr("class", "map-svg");
 
-  if (mapAnimTimer) {
-    mapAnimTimer.stop();
-    mapAnimTimer = null;
-  }
+    // Get US states feature and fit projection
+    const usStates = topojson.feature(us, us.objects.states);
+    console.log("US States feature:", usStates);
 
-  if (mapFirstRender) {
-    drawAllMapPoints(visiblePoints, newColors);
-    lastFillColors = newColors;
-    mapFirstRender = false;
-    return;
-  }
+    // Create projection fitted to US states
+    const projection = d3.geoAlbersUsa()
+      .fitSize([mapWidth, mapHeight], usStates);
 
-  const colorInterps = new Map();
-  for (let i = 0; i < visiblePoints.length; i++) {
-    const d = visiblePoints[i];
-    const oldColor = lastFillColors.get(d);
-    const newColor = newColors.get(d);
-    if (oldColor && oldColor !== newColor) {
-      colorInterps.set(d, d3.interpolateRgb(oldColor, newColor));
+    const path = d3.geoPath().projection(projection);
+
+    // Draw state boundaries
+    svg.append("g")
+      .attr("class", "states")
+      .selectAll("path")
+      .data(usStates.features)
+      .join("path")
+      .attr("d", path)
+      .attr("class", "state");
+
+    console.log("States drawn. Total states:", usStates.features.length);
+
+    // Get value range for color scale
+    const values = data
+      .map(d => +d[measure])
+      .filter(v => !isNaN(v));
+
+    const minVal = d3.min(values);
+    const maxVal = d3.max(values);
+
+    console.log("Color scale domain:", minVal, "to", maxVal);
+
+    const colorScale = d3.scaleSequential()
+      .domain([minVal, maxVal])
+      .interpolator(mapLayerInterpolators[measure] || d3.interpolateYlOrRd);
+
+    const projectedPoints = data
+      .map(d => {
+        const coords = projection([d.lon, d.lat]);
+        return coords && Array.isArray(coords) ? { ...d, proj: coords, mapValue: +d[measure] } : null;
+      })
+      .filter(d => {
+        if (!d || !Array.isArray(d.proj)) return false;
+        const x = d.proj[0];
+        const y = d.proj[1];
+        return Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= mapWidth && y >= 0 && y <= mapHeight;
+      });
+
+    // Draw data points
+    const pointsGroup = svg.append("g")
+      .attr("class", "data-points");
+
+    pointsGroup.selectAll("circle")
+      .data(projectedPoints)
+      .join("circle")
+      .attr("cx", d => d.proj[0])
+      .attr("cy", d => d.proj[1])
+      .attr("r", 1.5)
+      .attr("fill", d => colorScale(d.mapValue))
+      .attr("opacity", 0.55)
+      .on("mouseover", function(event, d) {
+        d3.select(this)
+          .attr("r", 5)
+          .attr("opacity", 1);
+
+        tooltip
+          .style("opacity", 1)
+          .html(`
+            <strong>${measureLabels[measure]}: ${d.mapValue.toFixed(2)}</strong><br>
+            Crop Zone: ${d.crop_zone}<br>
+            Lon: ${d.lon.toFixed(2)}, Lat: ${d.lat.toFixed(2)}<br>
+            Crop Density: ${d.crop_density.toFixed(0)}
+          `);
+      })      .on("mousemove", function(event) {
+        tooltip
+          .style("left", `${event.pageX + 14}px`)
+          .style("top", `${event.pageY - 28}px`);
+      })
+      .on("mouseout", function() {
+        d3.select(this)
+          .attr("r", 1.5)
+          .attr("opacity", 0.55);
+
+        tooltip.style("opacity", 0);
+      });
+
+    // Add gradient legend (centered horizontally near top, slightly right-shifted)
+    const legendWidth = 280;
+    const legendHeight = 20;
+    const legendX = mapWidth / 2 - legendWidth / 2 + 55;
+    const legendY = 20;
+
+    // Create defs for gradient
+    const defs = svg.append("defs");
+    const gradient = defs.append("linearGradient")
+      .attr("id", "legend-gradient")
+      .attr("x1", "0%")
+      .attr("x2", "100%");
+
+    // Add color stops from layer palette
+    const interp = mapLayerInterpolators[measure] || d3.interpolateYlOrRd;
+    const numStops = 10;
+    for (let i = 0; i <= numStops; i++) {
+      const t = i / numStops;
+      gradient.append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", interp(t));
     }
-  }
 
-  const duration = 380;
-  const ease = d3.easeCubicInOut;
+    // Legend title
+    svg.append("text")
+      .attr("class", "legend-title")
+      .attr("x", legendX + legendWidth / 2)
+      .attr("y", legendY - 8)
+      .text(`${measureLabels[measure]} Scale`);
 
-  mapAnimTimer = d3.timer((elapsed) => {
-    const t = ease(Math.min(1, elapsed / duration));
+    // Legend background rect
+    svg.append("rect")
+      .attr("class", "legend-bar")
+      .attr("x", legendX)
+      .attr("y", legendY)
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .attr("fill", "url(#legend-gradient)")
+      .attr("stroke", "#999")
+      .attr("stroke-width", 1);
 
-    mapCtx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    mapCtx.globalAlpha = 0.55;
-    for (let i = 0; i < visiblePoints.length; i++) {
-      const d = visiblePoints[i];
-      const ci = colorInterps.get(d);
-      mapCtx.fillStyle = ci ? ci(t) : newColors.get(d);
-      mapCtx.beginPath();
-      mapCtx.arc(d.projX, d.projY, 1.5, 0, 2 * Math.PI);
-      mapCtx.fill();
-    }
-    mapCtx.globalAlpha = 1;
+    // Legend scale
+    const legendScale = d3.scaleLinear()
+      .domain([minVal, maxVal])
+      .range([legendX, legendX + legendWidth]);
 
-    if (elapsed >= duration) {
-      mapAnimTimer.stop();
-      mapAnimTimer = null;
-      lastFillColors = newColors;
-    }
+    // Min value text
+    svg.append("text")
+      .attr("class", "legend-label")
+      .attr("x", legendX)
+      .attr("y", legendY + legendHeight + 25)
+      .attr("text-anchor", "start")
+      .text(minVal.toFixed(1));
+
+    // Max value text
+    svg.append("text")
+      .attr("class", "legend-label")
+      .attr("x", legendX + legendWidth)
+      .attr("y", legendY + legendHeight + 25)
+      .attr("text-anchor", "end")
+      .text(maxVal.toFixed(1));
+
+    console.log("Map rendered successfully with", data.length, "data points");
+
+  }).catch(error => {
+    console.error("Error loading TopoJSON:", error);
   });
-}
-
-function drawAllMapPoints(visiblePoints, colors) {
-  mapCtx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-  mapCtx.globalAlpha = 0.55;
-  for (let i = 0; i < visiblePoints.length; i++) {
-    const d = visiblePoints[i];
-    mapCtx.fillStyle = colors.get(d);
-    mapCtx.beginPath();
-    mapCtx.arc(d.projX, d.projY, 1.5, 0, 2 * Math.PI);
-    mapCtx.fill();
-  }
-  mapCtx.globalAlpha = 1;
-}
-
-function updateMapLegend() {
-  const svg = d3.select("#map").select("svg.map-svg");
-  const gradient = svg.select("#legend-gradient");
-  gradient.selectAll("stop").remove();
-  const numStops = 10;
-  for (let i = 0; i <= numStops; i++) {
-    const t = i / numStops;
-    gradient.append("stop")
-      .attr("offset", `${t * 100}%`)
-      .attr("stop-color", mapInterpolator(t));
-  }
-
-  svg.select(".legend-title").text(`${measureLabels[mapCurrentMeasure]} Scale`);
-  svg.select(".legend-min").text(mapMinVal.toFixed(1));
-  svg.select(".legend-max").text(mapMaxVal.toFixed(1));
-}
-
-function handleMapCanvasMove(event) {
-  if (!mapQuadtree) return;
-  const rect = hoverCanvas.getBoundingClientRect();
-  const scaleX = MAP_WIDTH / rect.width;
-  const scaleY = MAP_HEIGHT / rect.height;
-  const x = (event.clientX - rect.left) * scaleX;
-  const y = (event.clientY - rect.top) * scaleY;
-
-  const d = mapQuadtree.find(x, y, 6);
-
-  if (d !== hoveredPoint) {
-    hoveredPoint = d;
-    drawHoverRing(d);
-  }
-
-  if (d) {
-    tooltip
-      .style("opacity", 1)
-      .style("left", `${event.pageX + 14}px`)
-      .style("top", `${event.pageY - 28}px`)
-      .html(`
-        <strong>${measureLabels[mapCurrentMeasure]}: ${(+d[mapCurrentMeasure]).toFixed(2)}</strong><br>
-        Crop Zone: ${d.crop_zone}<br>
-        Lon: ${d.lon.toFixed(2)}, Lat: ${d.lat.toFixed(2)}<br>
-        Crop Density: ${d.crop_density.toFixed(0)}
-      `);
-  } else {
-    tooltip.style("opacity", 0);
-  }
-}
-
-function handleMapCanvasLeave() {
-  tooltip.style("opacity", 0);
-  if (hoveredPoint) {
-    hoveredPoint = null;
-    drawHoverRing(null);
-  }
-}
-
-function drawHoverRing(d) {
-  hoverCtx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-  if (!d) return;
-
-  const colorScale = d3.scaleSequential()
-    .domain([mapMinVal, mapMaxVal])
-    .interpolator(mapInterpolator);
-
-  hoverCtx.beginPath();
-  hoverCtx.arc(d.projX, d.projY, 4.5, 0, 2 * Math.PI);
-  hoverCtx.fillStyle = colorScale(+d[mapCurrentMeasure]);
-  hoverCtx.fill();
-
-  hoverCtx.beginPath();
-  hoverCtx.arc(d.projX, d.projY, 6, 0, 2 * Math.PI);
-  hoverCtx.strokeStyle = "#171717";
-  hoverCtx.lineWidth = 1.5;
-  hoverCtx.stroke();
 }
