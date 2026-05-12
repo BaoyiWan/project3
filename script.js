@@ -679,11 +679,11 @@ function drawMap() {
         tooltip.style("opacity", 0);
       });
 
-    // Add gradient legend
+    // Add gradient legend (centered horizontally near top, slightly right-shifted)
     const legendWidth = 280;
     const legendHeight = 20;
-    const legendX = mapWidth - legendWidth - 30;
-    const legendY = 45;
+    const legendX = mapWidth / 2 - legendWidth / 2 + 55;
+    const legendY = 20;
 
     // Create defs for gradient
     const defs = svg.append("defs");
@@ -706,7 +706,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-title")
       .attr("x", legendX + legendWidth / 2)
-      .attr("y", legendY - 12)
+      .attr("y", legendY - 8)
       .text(`${measureLabels[measure]} Scale`);
 
     // Legend background rect
@@ -729,7 +729,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-label")
       .attr("x", legendX)
-      .attr("y", legendY + legendHeight + 18)
+      .attr("y", legendY + legendHeight + 25)
       .attr("text-anchor", "start")
       .text(minVal.toFixed(1));
 
@@ -737,7 +737,7 @@ function drawMap() {
     svg.append("text")
       .attr("class", "legend-label")
       .attr("x", legendX + legendWidth)
-      .attr("y", legendY + legendHeight + 18)
+      .attr("y", legendY + legendHeight + 25)
       .attr("text-anchor", "end")
       .text(maxVal.toFixed(1));
 
