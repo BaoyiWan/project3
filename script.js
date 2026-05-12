@@ -28,13 +28,15 @@ let currentMetric = "precip_intensity";
 
 const mapLayerInterpolators = {
   precip_intensity: d3.interpolateYlOrRd,
-  rain_proxy: d3.interpolateBlues,
+  rain_proxy: t => d3.interpolateBlues(0.25 + 0.75 * t),
   snow_proxy: d3.interpolatePuBu,
   crop_density: d3.interpolateGreens
 };
 
 let usTopoCached = null;
 let usTopoPromise = null;
+let usLandCached = null;
+let pointsInUSComputed = false;
 
 function showMapSkeleton() {
   const container = d3.select("#map");
@@ -464,7 +466,7 @@ function drawViolinPlot() {
 
     // });
 
-  drawLegend(svg, width - 30, -10);
+  drawLegend(svg, 30, -22);
 
 
 }
@@ -472,6 +474,7 @@ function drawViolinPlot() {
 
 function drawLegend(svg, x, y) {
   const zones = ["Non-Agricultural", "Sparse Crops", "Intense Cropland"];
+  const itemWidth = 155;
 
   const legend = svg.append("g")
     .attr("class", "legend")
@@ -479,22 +482,22 @@ function drawLegend(svg, x, y) {
 
   legend.append("rect")
     .attr("x", -10)
-    .attr("y", -18)
-    .attr("width", 170)
-    .attr("height", 84)
+    .attr("y", -12)
+    .attr("width", itemWidth * zones.length + 10)
+    .attr("height", 22)
     .attr("rx", 8)
     .attr("fill", "white")
     .attr("opacity", 0.85);
 
   zones.forEach((zone, i) => {
-    const row = legend.append("g")
-      .attr("transform", `translate(0,${i * 22})`);
+    const item = legend.append("g")
+      .attr("transform", `translate(${i * itemWidth},0)`);
 
-    row.append("circle")
+    item.append("circle")
       .attr("r", 6)
       .attr("fill", colorScale(zone));
 
-    row.append("text")
+    item.append("text")
       .attr("x", 12)
       .attr("y", 4)
       .text(zone);
@@ -627,7 +630,19 @@ function drawMap() {
     const usStates = topojson.feature(us, us.objects.states);
     console.log("US States feature:", usStates);
 
-    // Create projection fitted to US states
+    // Merge all states into one MultiPolygon and cache a per-point in-US flag.
+    // geoContains is O(vertices) per call, so 12k points × 50 features would be
+    // painful on every redraw — compute once and reuse.
+    if (!usLandCached) {
+      usLandCached = topojson.merge(us, us.objects.states.geometries);
+    }
+    if (!pointsInUSComputed) {
+      pointsData.forEach(p => {
+        p._inUS = d3.geoContains(usLandCached, [p.lon, p.lat]);
+      });
+      pointsInUSComputed = true;
+    }
+
     const projection = d3.geoAlbersUsa()
       .fitSize([mapWidth, mapHeight], usStates);
 
@@ -644,8 +659,9 @@ function drawMap() {
 
     console.log("States drawn. Total states:", usStates.features.length);
 
-    // Get value range for color scale
+    // Get value range for color scale (US-only so the scale isn't skewed by dropped points)
     const values = data
+      .filter(d => d._inUS)
       .map(d => +d[measure])
       .filter(v => !isNaN(v));
 
@@ -660,6 +676,7 @@ function drawMap() {
 
     const projectedPoints = data
       .map(d => {
+        if (!d._inUS) return null;
         const coords = projection([d.lon, d.lat]);
         return coords && Array.isArray(coords) ? { ...d, proj: coords, mapValue: +d[measure] } : null;
       })

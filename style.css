@@ -378,10 +378,7 @@ svg {
   fill: #d1dce8;
   stroke: #8fa5bf;
   stroke-width: 1px;
-}
-
-.state:hover {
-  fill: #c5d7e5;
+  pointer-events: none;
 }
 
 .data-points circle {
