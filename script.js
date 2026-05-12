@@ -37,12 +37,15 @@ let usTopoCached = null;
 let usTopoPromise = null;
 let conusStatesCached = null;
 
-const conusExcludedIds = new Set(["02", "15", "72"]);
+// Alaska=2, Hawaii=15, Puerto Rico=72 (FIPS). us-atlas may store ids as strings ("02") or
+// numbers (2) depending on the build, so coerce with +f.id for a robust comparison.
+const conusExcludedFips = new Set([2, 15, 72]);
+
 function buildConusFromTopo(us) {
   const allStates = topojson.feature(us, us.objects.states);
   return {
     type: "FeatureCollection",
-    features: allStates.features.filter(f => !conusExcludedIds.has(String(f.id)))
+    features: allStates.features.filter(f => !conusExcludedFips.has(+f.id))
   };
 }
 
