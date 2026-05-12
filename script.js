@@ -569,24 +569,53 @@ function drawBarChart() {
     .text(d => d[summaryCol].toFixed(1));
 }
 
+let usTopoCached = null;
+let usTopoPromise = null;
+
+function showMapSkeleton() {
+  const container = d3.select("#map");
+  if (container.select(".map-skeleton").empty()) {
+    const skel = container.append("div").attr("class", "map-skeleton");
+    skel.append("div").attr("class", "map-skeleton__spinner");
+    skel.append("div").attr("class", "map-skeleton__label").text("Loading map…");
+  }
+}
+
+function hideMapSkeleton() {
+  const skel = d3.select("#map").select(".map-skeleton");
+  if (!skel.empty()) {
+    skel.classed("is-hidden", true);
+    setTimeout(() => skel.remove(), 400);
+  }
+}
+
+function loadUsTopo() {
+  if (usTopoCached) return Promise.resolve(usTopoCached);
+  if (usTopoPromise) return usTopoPromise;
+  usTopoPromise = d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+    .then(us => { usTopoCached = us; return us; });
+  return usTopoPromise;
+}
+
 function drawMap() {
   const measure = getCurrentMeasure();
   const data = getFilteredPoints();
 
   if (!data.length) return;
 
-  d3.select("#map").selectAll("*").remove();
-
   const mapWidth = 900;
   const mapHeight = 550;
 
+  // Keep skeleton overlay; only remove the previous SVG so the frame doesn't blink.
+  d3.select("#map").selectAll("svg").remove();
+  showMapSkeleton();
+
   console.log("drawMap() called with measure:", measure);
 
-  // Load US states TopoJSON
-  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+  loadUsTopo().then(us => {
     console.log("TopoJSON loaded:", us);
 
-    // Create SVG with proper dimensions
+    // Create SVG with proper dimensions (starts hidden, fades in once drawn)
     const svg = d3.select("#map")
       .append("svg")
       .attr("width", mapWidth)
@@ -743,7 +772,12 @@ function drawMap() {
 
     console.log("Map rendered successfully with", data.length, "data points");
 
+    // Reveal the rendered map and dismiss the skeleton.
+    requestAnimationFrame(() => svg.classed("is-ready", true));
+    hideMapSkeleton();
+
   }).catch(error => {
     console.error("Error loading TopoJSON:", error);
+    hideMapSkeleton();
   });
 }
