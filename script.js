@@ -134,10 +134,10 @@ function updateMapTitle() {
   const measure = getCurrentMeasure();
 
   const titleMap = {
-    precip_intensity: "Overall Precipitation Across the United States",
-    rain_proxy: "Rain Intensity Across the United States",
-    snow_proxy: "Snow Intensity Across the United States",
-    crop_density: "Cropland Density Across the United States"
+    precip_intensity: "Overall Precipitation Across the United States Mainland",
+    rain_proxy: "Rain Intensity Across the United States Mainland",
+    snow_proxy: "Snow Intensity Across the United States Mainland",
+    crop_density: "Cropland Density Across the United States Mainland"
   };
 
   const descriptionMap = {
