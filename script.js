@@ -28,8 +28,8 @@ let currentMetric = "precip_intensity";
 
 const mapLayerInterpolators = {
   precip_intensity: d3.interpolateYlOrRd,
-  rain_proxy: t => d3.interpolateBlues(0.25 + 0.75 * t),
-  snow_proxy: d3.interpolatePuBu,
+  rain_proxy: t => d3.interpolate("#4db8ff", "#00204d")(t),
+  snow_proxy: t => d3.interpolate("#a8a8a8", "#1f4788")(t),
   crop_density: d3.interpolateGreens
 };
 
@@ -143,7 +143,7 @@ function updateMapTitle() {
   const descriptionMap = {
     precip_intensity: "This map shows the spatial distribution of data points colored by overall precipitation intensity. Darker shades indicate higher precipitation values on a yellow-to-red scale.",
     rain_proxy: "This map shows the spatial distribution of data points colored by rain intensity. Darker shades indicate higher rain values on a blue scale.",
-    snow_proxy: "This map shows the spatial distribution of data points colored by snow intensity. Darker shades indicate higher snow values on a blue-purple scale.",
+    snow_proxy: "This map shows the spatial distribution of data points colored by snow intensity. Darker shades indicate higher snow values on a grey-to-blue scale.",
     crop_density: "This map shows the spatial distribution of data points colored by cropland density. Darker shades indicate higher crop density values on a green scale."
   };
 
