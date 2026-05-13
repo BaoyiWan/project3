@@ -30,7 +30,7 @@ const mapLayerInterpolators = {
   precip_intensity: t => d3.interpolate("#ffe8cc", "#a50026")(t),
   rain_proxy: t => d3.interpolate("#80dfff", "#00204d")(t),
   snow_proxy: t => d3.interpolate("#b3b3b3", "#1f4788")(t),
-  crop_density: d3.interpolateGreens
+  crop_density: t => d3.interpolate("#d9f0d3", "#00441b")(t)
 };
 
 let usTopoCached = null;
